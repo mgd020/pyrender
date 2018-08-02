@@ -7,6 +7,8 @@ A Python template rendering engine.
 * escape single quotes and newlines
 * use unicode on py2
 * remove async compound statement on py2
+* extention and blocks
+* includes
 * tests
 * add to pip
 
