@@ -49,10 +49,15 @@ class Template:
         self.strip_newlines = strip_newlines
         return value
 
-    def render(self, context=None):
-        text = []
-        if not context:
-            context = {}
-        context['__render__'] = text.append
+    def _render(self, append, context):
+        context = {} if context is None else dict(context)
+        context['__render__'] = append
         exec(self.code, context)
+
+    def render_string(self, context=None):
+        text = []
+        self._render(text.append, context)
         return ''.join(text)
+
+    def render_stream(self, stream, context=None):
+        self._render(stream.write, context)

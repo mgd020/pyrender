@@ -3,6 +3,7 @@
 """
 
 import sys
+import os
 
 try:
     from wheezy.html.utils import escape_html as escape
@@ -15,7 +16,8 @@ s = PY3 and str or unicode
 
 ctx = {
     'table': [dict(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8, i=9, j=10)
-              for x in range(1000)]
+              for x in range(1000)],
+    'escape': escape,
 }
 
 
@@ -428,23 +430,30 @@ else:
         return bottle_template.render(**ctx)
 
 
-# region: custom
+# region: pyrender
 
-from custom import Template
-custom_template = Template(s("""\
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src')))
+import cStringIO
+from pyrender import Template
+pyrender_template = Template(s("""\
 <table>
     {% for row in table %}
     <tr>
         {% for key, value in row.items() %}
-        <td>{{ key }}</td><td>{{ value }}</td>
+        <td>{{ escape(key) }}</td><td>{{ value }}</td>
         {% end %}
     </tr>
     {% end %}
 </table>
 """))
 
-def test_custom():
-    return s(custom_template.render(ctx))
+def test_pyrender_string():
+    return s(pyrender_template.render_string(ctx))
+
+def test_pyrender_stream():
+    stream = cStringIO.StringIO()
+    pyrender_template.render_stream(stream, ctx)
+    return s(stream.getvalue())
 
 
 def run(number=100):
@@ -452,7 +461,7 @@ def run(number=100):
     from timeit import Timer
     from pstats import Stats
     names = globals().keys()
-    # names = ['test_custom', 'test_list_append', 'test_list_extend', 'test_tenjin', 'test_wheezy_template']
+    # names = ['test_jinja2', 'test_list_extend', 'test_mako', 'test_pyrender_string', 'test_pyrender_stream', 'test_tenjin', 'test_wheezy_template']
     names = sorted([(name, globals()[name])
                     for name in names if name.startswith('test_')])
     print("                     msec    rps  tcalls  funcs")
