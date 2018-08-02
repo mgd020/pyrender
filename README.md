@@ -5,6 +5,8 @@ A Python template rendering engine.
 ## Todo
 
 * escape single quotes and newlines
+* tests
+* add to pip
 
 ## Benchmarks
 
