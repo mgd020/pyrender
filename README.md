@@ -5,6 +5,8 @@ A Python template rendering engine.
 ## Todo
 
 * escape single quotes and newlines
+* use unicode on py2
+* remove async compound statement on py2
 * tests
 * add to pip
 
