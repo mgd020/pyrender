@@ -8,3 +8,4 @@ Tenjin
 tornado
 web2py
 wheezy.template
+wheezy.html
