@@ -1,37 +1,53 @@
 import re
 
 
-class Template:
-    SOURCE_BEGIN = "__render__('"
-    SOURCE_END = "')"
-    REPL = {
-        # TODO: escale "'", "\n"
-        '\n': ('\\n', None),
-        '{{': ("')\n__render__(str(", True),
-        '}}': ("))\n__render__('", False),
-        '{%': ("')\n", True),
-        '%}': ("\n__render__('", False),
-    }
-    REGEX = re.compile(r'|'.join(REPL.keys()))
-    COMPOUND_STMT = re.compile(r'^(?:if|elif|else|while|for|try|except|finally|with|def|class|async)\b')
-    STMT_END = 'end'
-    EMPTY_STMT = "__render__('')"
+class Compiler:
+    """Compile a string into a python template that is callable with a context dict."""
 
-    def __init__(self, string):
+    APPEND = '_a'
+    BUFFER = '_b'
+    RENDER = '_r'
+    CONTEXT = '_c'
+    SOURCE_BEGIN = """\
+def {render}({context}=None):
+ if {context}:
+  globals().update({context})
+ {buffer} = []
+ {append} = {buffer}.append
+ {append}('""".format(render=RENDER, context=CONTEXT, buffer=BUFFER, append=APPEND)
+    SOURCE_END = """\
+')
+ return ''.join({buffer})""".format(buffer=BUFFER)
+    REPL = {
+        '\n': ('\n', '\\n'),
+        "'": ("'", "\\'"),
+        "\\": ("\\", "\\\\"),
+        '{{': ("')\n{append}('%s'%(".format(append=APPEND), False),
+        '}}': ("))\n{append}('".format(append=APPEND), True),
+        '{%': ("')\n", False),
+        '%}': ("\n{append}('".format(append=APPEND), True),
+    }
+    STMT_END = 'end'
+    EMPTY_STMT = "%s('')" % APPEND
+
+    def __init__(self):
+        self.REGEX = re.compile(r'|'.join(k for k in self.REPL.keys() if k != '\\') + r'|\\')  # \ needs escaping
+        self.COMPOUND_STMT = re.compile(r'^(?:if|elif|else|while|for|try|except|finally|with|def|class|async)\b')
+
+    def __call__(self, string):
         lines = []
-        indent = 0
-        self.strip_newlines = False
+        indent = 1
+        self.in_string = True
         STMT_END = self.STMT_END
         COMPOUND_STMT = self.COMPOUND_STMT
         EMPTY_STMT = self.EMPTY_STMT
-        PASS_STMT = 'pass'
         for line in self.REGEX.sub(self._repl, string).split('\n'):
             line = line.strip()
             if line == STMT_END:
                 indent -= 1
                 continue
             if line == EMPTY_STMT:
-                line = PASS_STMT
+                continue
             lines.append(' ' * indent)
             lines.append(line)
             if COMPOUND_STMT.match(line):
@@ -40,24 +56,13 @@ class Template:
             lines.append('\n')
         lines.pop(-1)  # remove trailing newline
         source = '%s%s%s' % (self.SOURCE_BEGIN, ''.join(lines), self.SOURCE_END)
-        self.code = compile(source, '<string>', 'exec')
+        symbols = {}
+        exec(source, {}, symbols)
+        return symbols[self.RENDER]
 
     def _repl(self, match):
-        value, strip_newlines = self.REPL[match.group()]
-        if strip_newlines is None:
-            return '' if self.strip_newlines else value
-        self.strip_newlines = strip_newlines
+        value, in_string = self.REPL[match.group()]
+        if not isinstance(in_string, bool):
+            return in_string if self.in_string else value
+        self.in_string = in_string
         return value
-
-    def _render(self, append, context):
-        context = {} if context is None else dict(context)
-        context['__render__'] = append
-        exec(self.code, context)
-
-    def render_string(self, context=None):
-        text = []
-        self._render(text.append, context)
-        return ''.join(text)
-
-    def render_stream(self, stream, context=None):
-        self._render(stream.write, context)

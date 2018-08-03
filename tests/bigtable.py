@@ -433,9 +433,8 @@ else:
 # region: pyrender
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src')))
-import cStringIO
-from pyrender import Template
-pyrender_template = Template(s("""\
+from pyrender import Compiler
+pyrender_template = Compiler()(s("""\
 <table>
     {% for row in table %}
     <tr>
@@ -447,37 +446,31 @@ pyrender_template = Template(s("""\
 </table>
 """))
 
-def test_pyrender_string():
-    return s(pyrender_template.render_string(ctx))
-
-def test_pyrender_stream():
-    stream = cStringIO.StringIO()
-    pyrender_template.render_stream(stream, ctx)
-    return s(stream.getvalue())
+def test_pyrender():
+    return s(pyrender_template(ctx))
 
 
 def run(number=100):
-    import profile
-    from timeit import Timer
+    import cProfile
+    import timeit
     from pstats import Stats
     names = globals().keys()
-    # names = ['test_jinja2', 'test_list_extend', 'test_mako', 'test_pyrender_string', 'test_pyrender_stream', 'test_tenjin', 'test_wheezy_template']
+    # names = ['test_list_extend', 'test_pyrender', 'test_wheezy_template']
     names = sorted([(name, globals()[name])
                     for name in names if name.startswith('test_')])
     print("                     msec    rps  tcalls  funcs")
     for name, test in names:
         if test:
             assert isinstance(test(), s)
-            t = Timer(setup='from __main__ import %s as t' % name,
-                      stmt='t()')
-            t = t.timeit(number=number)
-            st = Stats(profile.Profile().runctx(
+            t = min(timeit.repeat(test, number=number))
+            st = Stats(cProfile.Profile().runctx(
                 'test()', globals(), locals()))
             print('%-17s %7.2f %6.2f %7d %6d' % (name[5:],
                                                  1000 * t / number,
                                                  number / t,
                                                  st.total_calls,
                                                  len(st.stats)))
+            # st.print_stats()
         else:
             print('%-26s not installed' % name[5:])
 
