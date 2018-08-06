@@ -12,7 +12,7 @@ A Python template rendering engine.
 
 ## Benchmarks
 
-Run on 2015 MBP 15".
+Run on 2017 MBP 15".
 
 ### `bigtable`
 
