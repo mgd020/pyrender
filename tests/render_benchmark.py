@@ -3,11 +3,17 @@
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
 
+from __future__ import print_function
+
 import copy
 import optparse
 import string
-import cStringIO
-import StringIO
+try:
+    from StringIO import StringIO
+    from cStringIO import StringIO as cStringIO
+except ImportError:
+    from io import StringIO
+    cStringIO = StringIO
 import sys
 import timeit
 import os
@@ -266,7 +272,7 @@ def get_python_tests():
         write('<table>\n')
         for row in table:
             write('<tr>\n')
-            for column in row.itervalues():
+            for column in row.values():
                 write('<td>')
                 write('%s' % column)
                 write('</td>\n')
@@ -278,20 +284,20 @@ def get_python_tests():
         rows = ''
         for row in TABLE_DATA:
             columns = ''
-            for column in row.itervalues():
+            for column in row.values():
                 columns = columns + tmpl_column.substitute(column=column)
             rows = rows + tmpl_row.substitute(row=columns)
         return tmpl_table.substitute(table=rows)
 
     def test_python_stringio():
         """Python StringIO buffer"""
-        buffer = StringIO.StringIO()
+        buffer = StringIO()
         _buffer_fn(buffer.write, TABLE_DATA)
         return buffer.getvalue()
 
     def test_python_cstringio():
         """Python cStringIO buffer"""
-        buffer = cStringIO.StringIO()
+        buffer = cStringIO()
         _buffer_fn(buffer.write, TABLE_DATA)
         return buffer.getvalue()
 
@@ -682,13 +688,13 @@ def time_test(test, number):
         result = '   (not installed?)'
     else:
         result = '%16.2f ms' % (1000 * time)
-    print '%-35s %s' % (test.__doc__, result)
+    print('%-35s %s' % (test.__doc__, result))
 
 
 def run_tests(which=None, number=100, compare=False):
     if number > 100:
-        print 'Running benchmarks %d times each...' % number
-        print
+        print('Running benchmarks %d times each...' % number)
+        print('')
     if compare:
         groups = [
             'bottle',
@@ -736,8 +742,8 @@ def run_tests(which=None, number=100, compare=False):
 
 
 def profile_tests(which=None):
-    print 'Profiling...'
-    print
+    print('Profiling...')
+    print('')
     import hotshot, hotshot.stats
     profile_data = 'template.prof'
     profile = hotshot.Profile(profile_data)
@@ -745,9 +751,9 @@ def profile_tests(which=None):
     stats = hotshot.stats.load(profile_data)
     stats.strip_dirs()
     stats.sort_stats('time', 'calls')
-    print
+    print('')
     stats.print_stats()
-    print 'Profile data written to %s' % profile_data
+    print('Profile data written to %s' % profile_data)
 
 
 def main():

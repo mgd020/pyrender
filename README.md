@@ -14,7 +14,7 @@ A Python template rendering engine.
 
 Run on 2015 MBP 15".
 
-### `. env2/bin/python && python bigtable.py`
+### `bigtable`
 
     CPython 2.7.10       msec    rps  tcalls  funcs
     list_extend          5.28 189.56   23006      7
@@ -32,8 +32,6 @@ Run on 2015 MBP 15".
     web2py              77.22  12.95  295014     18
     django             353.94   2.83 1162080     62
 
-### `. env/bin/python && python bigtable.py`
-
     CPython 3.6.4        msec    rps  tcalls  funcs
     list_extend          4.34 230.62   23007      8
     pyrender             5.45 183.51   63020     17
@@ -47,7 +45,7 @@ Run on 2015 MBP 15".
     tornado             47.71  20.96  353025     24
     django             205.85   4.86  815081     60
 
-### `. env2/bin/python && python render_benchmark.py -c`
+### `render_benchmark`
 
     CPython 2.7.10                                  msec
     pyrender template                               2.56
@@ -80,3 +78,20 @@ Run on 2015 MBP 15".
     web2pu template                                69.57
     Django template autoescaped                   152.97
     Django template                               154.07
+
+    CPython 3.6.4                                   msec
+    Python list concatenation                       3.34
+    Python StringIO buffer                          3.74
+    pyrender template                               3.77
+    Mako template                                   4.83
+    wheezy template                                 6.62
+    Jinja2 template                                 6.80
+    Mako template autoescaped                      12.42
+    tenjin template                                18.31
+    Jinja2 template autoescaped                    19.05
+    bottle                                         22.50
+    Python string template                         29.83
+    chameleon                                      40.55
+    tornado template                               51.84
+    Django template autoescaped                   122.51
+    Django template                               122.86
