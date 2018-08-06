@@ -2,6 +2,16 @@
 
 A Python template rendering engine.
 
+## Features
+
+* fast
+* lightweight
+* simple
+* compiled to Python bytecode
+* full syntax supported
+* auto-indenting with `end` keyword (no `:`)
+* eval `{{ ... }}` and exec `{% ... %}` tokens
+
 ## Todo
 
 * use unicode on py2
