@@ -1,30 +1,61 @@
 import re
 
 
+class Template(object):
+    """Wrap a compiled template function and add a render() method."""
+
+    def __init__(self, func, globals_):
+        self._render = func
+        self._globals = globals_
+        self._globals_stack = []
+
+    def render(self, context=None):
+        lines = []
+        if not context:
+            context = {}
+        context[Compiler.APPEND] = lines.append
+        self._push_context(context)
+        try:
+            self._render()
+        except:
+            raise
+        else:
+            return ''.join(lines)
+        finally:
+            self._pop_context()
+
+    def _reset_context(self, context):
+        # id of globlas must not change
+        self._globals.clear()
+        self._globals['__builtins__'] = __builtins__
+        self._globals.update(context)
+
+    def _push_context(self, context):
+        # push a shallow copy of current globals onto the stack
+        self._globals_stack.append(dict(self._globals))
+        self._reset_context(context)
+
+    def _pop_context(self):
+        self._reset_context(self._globals_stack.pop())
+
+
 class Compiler:
-    """Compile a string into a python template that is callable with a context dict."""
+    """Compile a string into a python template that can render with an optional context dict."""
 
     # some reused strings (makes maintenance easy)
-    APPEND = '_a'
-    BUFFER = '_b'
-    RENDER = '_r'
-    CONTEXT = '_c'
+    APPEND = '__append__'
+    RENDER = 'render'
 
     # the start of the compiled render function (1 space indent, start string append)
-    # once the function gets context (a dict), it updates globals() so the rest of the function
-    # can use symbols in context like they are locals (this doesn't seem to affect outer contexts)
+    # globals() is updated with contents of context dict and append function so the
+    # rest of the function can use symbols in context like they are locals
     SOURCE_BEGIN = """\
-def {render}({context}=None):
- if {context}:
-  globals().update({context})
- {buffer} = []
- {append} = {buffer}.append
- {append}('""".format(render=RENDER, context=CONTEXT, buffer=BUFFER, append=APPEND)
+def {render}():
+ {append} = globals()['{append}']
+ {append}('""".format(render=RENDER, append=APPEND)
 
     # the end of the compiled render function (1 space indent, end string append)
-    SOURCE_END = """\
-')
- return ''.join({buffer})""".format(buffer=BUFFER)
+    SOURCE_END = "')"
 
     # tokens we replace in input string
     # * set whether we are in a string or not
@@ -46,7 +77,7 @@ def {render}({context}=None):
     STMT_END = 'end'
 
     # useful for removing empty statements
-    EMPTY_STMT = "%s('')" % APPEND
+    EMPTY_STMT = "{append}('')".format(append=APPEND)
 
     def __init__(self):
         # efficiently replace tokens in the string
@@ -56,9 +87,9 @@ def {render}({context}=None):
         # used to determine if the current line is a compound statement, to start block
         self.COMPOUND_STMT = re.compile(r'^(?:if|elif|else|while|for|try|except|finally|with|def|class|async)\b')
 
-    def __call__(self, string):
+    def compile(self, string):
         # source code line buffer
-        lines = []
+        lines = [self.SOURCE_BEGIN]
 
         # current indent starts at 1 as the outer function is 0
         indent = 1
@@ -75,6 +106,10 @@ def {render}({context}=None):
         # will call self._repl for each token match
         for line in self.REGEX.sub(self._repl, string).split('\n'):
             line = line.strip()
+
+            # blank
+            if not line:
+                continue
 
             # dedent
             if line == STMT_END:
@@ -97,16 +132,17 @@ def {render}({context}=None):
             # re-add newline removed by split/strip above
             lines.append('\n')
 
-        # remove trailing newline
-        lines.pop(-1)
+        # replace trailing newline with end source
+        lines[-1] = self.SOURCE_END
 
         # make full function source
-        source = '%s%s%s' % (self.SOURCE_BEGIN, ''.join(lines), self.SOURCE_END)
+        source = ''.join(lines)
 
-        # compile and execute the function def, and return the new render function
-        symbols = {}
-        exec(source, {}, symbols)
-        return symbols[self.RENDER]
+        # compile and execute the function def, and return the template
+        locals_ = {}
+        globals_ = {}
+        exec(source, globals_, locals_)
+        return Template(locals_[self.RENDER], globals_)
 
     def _repl(self, match):
         # return string to be replaced into code (see REPL above)

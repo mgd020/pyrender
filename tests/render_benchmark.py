@@ -43,12 +43,46 @@ try:
 except ImportError:
     mako = None
 
-
 try:
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src')))
     import pyrender
 except ImportError:
     pyrender = None
+
+try:
+    import tornado
+    import tornado.template
+except ImportError:
+    tornado = None
+
+try:
+    import wheezy.template.engine
+    import wheezy.template.loader
+    import wheezy.template.ext.core
+    import wheezy.html.utils
+except ImportError:
+    wheezy = None
+
+try:
+    import tenjin
+except ImportError:
+    tenjin = None
+
+try:
+    import gluon.html
+    import gluon.template
+except ImportError:
+    gluon = None
+
+try:
+    import chameleon.zpt.template
+except ImportError:
+    chameleon = None
+
+try:
+    import bottle
+except ImportError:
+    bottle = None
 
 
 TABLE_DATA = [
@@ -428,14 +462,212 @@ def get_pyrender_tests():
         </table>
     """
 
-    tmpl = pyrender.Compiler()(tmpl_src)
+    tmpl = pyrender.Compiler().compile(tmpl_src)
     context = {'table': TABLE_DATA}
 
     def test_pyrender():
         """pyrender template"""
-        tmpl(context)
+        tmpl.render(context)
 
     return [test_pyrender]
+
+
+def get_tornado_tests():
+    if not tornado:
+        return []
+
+    tornado_template = tornado.template.Template("""\
+<table>
+    {% for row in table %}
+    <tr>
+        {% for key, value in row.items() %}
+        <td>{{ key }}</td><td>{{ value }}</td>
+        {% end %}
+    </tr>
+    {% end %}
+</table>
+""")
+
+    def test_tornado():
+        """tornado template"""
+        return tornado_template.generate(table=TABLE_DATA).decode('utf8')
+
+    return [
+        test_tornado,
+    ]
+
+
+def get_wheezy_tests():
+    if not wheezy:
+        return []
+
+    from wheezy.template.engine import Engine
+    from wheezy.template.loader import DictLoader
+    from wheezy.template.ext.core import CoreExtension
+    # from wheezy.html.utils import escape_html as escape
+
+    engine = Engine(loader=DictLoader({'x': """\
+@require(table)
+<table>
+    @for row in table:
+    <tr>
+        @for key, value in row.items():
+        <td>@key!s</td><td>@value!s</td>
+        @end
+    </tr>
+    @end
+</table>
+"""}), extensions=[CoreExtension()])
+    # engine.global_vars.update({'h': escape})
+    wheezy_template = engine.get_template('x')
+
+    ctx = {'table': TABLE_DATA}
+
+    def test_wheezy_template():
+        """wheezy template"""
+        return wheezy_template.render(ctx)
+
+    return [
+        test_wheezy_template,
+    ]
+
+
+def get_tenjin_tests():
+    if not tenjin:
+        return []
+
+    try:
+        import webext
+        helpers = {
+            'to_str': webext.to_str,
+            'escape': webext.escape_html
+        }
+    except ImportError:
+        helpers = {
+            'to_str': tenjin.helpers.to_str,
+            'escape': tenjin.helpers.escape
+        }
+    tenjin_template = tenjin.Template(encoding='utf8')
+    tenjin_template.convert("""\
+<table>
+    <?py for row in table: ?>
+    <tr>
+        <?py for key, value in row.items(): ?>
+        <td>${ key }</td><td>#{ value }</td>
+        <?py #end ?>
+    </tr>
+    <?py #end ?>
+</table>
+""")
+
+    ctx = {
+        'table': TABLE_DATA,
+    }
+
+    def test_tenjin():
+        """tenjin template"""
+        return tenjin_template.render(ctx, helpers)
+
+    return [
+        test_tenjin,
+    ]
+
+
+def get_web2py_tests():
+    if not gluon:
+        return []
+
+    import cStringIO
+    from gluon.html import xmlescape
+    from gluon.template import get_parsed
+
+    # see gluon.globals.Response
+    class DummyResponse(object):
+        def __init__(self):
+            self.body = cStringIO.StringIO()
+
+        def write(self, data, escape=True):
+            if not escape:
+                self.body.write(str(data))
+            else:
+                self.body.write(xmlescape(data))
+
+    web2py_template = compile(get_parsed("""\
+<table>
+    {{ for row in table: }}
+    <tr>
+        {{ for key, value in row.items(): }}
+        <td>{{ =key }}</td><td>{{ =value }}</td>
+        {{ pass }}
+    </tr>
+    {{ pass }}
+</table>
+"""), '', 'exec')
+
+    ctx = {'table': TABLE_DATA}
+
+    def test_web2py():
+        """web2pu template"""
+        response = DummyResponse()
+        exec(web2py_template, {}, dict(response=response, **ctx))
+        return response.body.getvalue().decode('utf8')
+
+    return [
+        test_web2py,
+    ]
+
+
+def get_chameleon_tests():
+    if not chameleon:
+        return []
+
+    from chameleon.zpt.template import PageTemplate
+    chameleon_template = PageTemplate("""\
+<table>
+    <tr tal:repeat="row table">
+        <i tal:omit-tag="" tal:repeat="key row">
+        <td>${key}</td><td>${row[key]}</td>
+        </i>
+    </tr>
+</table>
+""")
+
+    ctx = {'table': TABLE_DATA}
+
+    def test_chameleon():
+        """chameleon"""
+        return chameleon_template.render(**ctx)
+
+    return [
+        test_chameleon,
+    ]
+
+
+def get_bottle_tests():
+    if not bottle.SimpleTemplate:
+        return []
+
+    from bottle import SimpleTemplate
+
+    bottle_template = SimpleTemplate("""\
+<table>
+    % for row in table:
+    <tr>
+        % for key, value in row.items():
+        <td>{{key}}</td><td>{{!value}}</td>
+        % end
+    </tr>
+    % end
+</table>
+""")
+
+    def test_bottle():
+        """bottle"""
+        return bottle_template.render(table=TABLE_DATA)
+
+    return [
+        test_bottle,
+    ]
 
 
 def time_test(test, number):
@@ -458,9 +690,23 @@ def run_tests(which=None, number=100, compare=False):
         print 'Running benchmarks %d times each...' % number
         print
     if compare:
-        groups = ['cheetah', 'django', 'jinja2', 'mako', 'python', 'spitfire', 'pyrender']
+        groups = [
+            'bottle',
+            'chameleon',
+            'cheetah',
+            'django',
+            'jinja2',
+            'mako',
+            'pyrender',
+            'python',
+            'spitfire',
+            'tenjin',
+            'tornado',
+            'web2py',
+            'wheezy',
+        ]
     else:
-        groups = ['spitfire']
+        groups = ['pyrender']
     # Built the full list of eligible tests.
     tests = []
     missing_engines = []
@@ -468,9 +714,9 @@ def run_tests(which=None, number=100, compare=False):
         test_list_fn = 'get_%s_tests' % g
         test = globals()[test_list_fn]()
         if test:
-          tests.extend(test)
+            tests.extend(test)
         else:
-          missing_engines.append(g)
+            missing_engines.append(g)
     # Optionally filter by a set of matching test name (sub)strings.
     if which:
         which_tests = []

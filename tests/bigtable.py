@@ -435,7 +435,7 @@ else:
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src')))
 from pyrender import Compiler
-pyrender_template = Compiler()(s("""\
+pyrender_template = Compiler().compile(s("""\
 <table>
     {% for row in table %}
     <tr>
@@ -447,8 +447,9 @@ pyrender_template = Compiler()(s("""\
 </table>
 """))
 
+
 def test_pyrender():
-    return s(pyrender_template(ctx))
+    return s(pyrender_template.render(ctx))
 
 
 def run(number=100):
@@ -456,7 +457,7 @@ def run(number=100):
     import timeit
     from pstats import Stats
     names = globals().keys()
-    # names = ['test_list_extend', 'test_pyrender', 'test_wheezy_template', 'test_spitfire']
+    # names = ['test_pyrender', 'test_wheezy_template']
     names = sorted([(name, globals()[name])
                     for name in names if name.startswith('test_')])
     print("                     msec    rps  tcalls  funcs")
@@ -464,13 +465,8 @@ def run(number=100):
         if test:
             assert isinstance(test(), s)
             t = min(timeit.repeat(test, number=number))
-            st = Stats(cProfile.Profile().runctx(
-                'test()', globals(), locals()))
-            print('%-17s %7.2f %6.2f %7d %6d' % (name[5:],
-                                                 1000 * t / number,
-                                                 number / t,
-                                                 st.total_calls,
-                                                 len(st.stats)))
+            st = Stats(cProfile.Profile().runctx('test()', globals(), locals()))
+            print('%-17s %7.2f %6.2f %7d %6d' % (name[5:], 1000 * t / number, number / t, st.total_calls, len(st.stats)))
             # st.print_stats()
         else:
             print('%-26s not installed' % name[5:])
