@@ -4,6 +4,7 @@ A Python template rendering engine.
 
 ## Todo
 
+* add rest of tests from bigtable to render_benchmark
 * use unicode on py2
 * extention and blocks
 * includes + inlines
