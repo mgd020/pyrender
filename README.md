@@ -7,10 +7,65 @@ A Python template rendering engine.
 * fast
 * lightweight
 * simple
-* compiled to Python bytecode
+* no dependencies
+* templates compiled to Python bytecode
 * full syntax supported
 * auto-indenting with `end` keyword (no `:`)
 * eval `{{ ... }}` and exec `{% ... %}` tokens
+
+## Example
+
+`template.html`
+
+```django
+{% import sys, getpass %}
+
+<h1>{{ title }}</h1>
+
+<p>Hi {{ getpass.getuser() or 'you' }}</p>
+
+<h2>Items</h2>
+
+<ul>{% for item in items %}
+    <li>{{ item }}</li>{% end %}
+</ul>
+
+<p>{{ sys.version }}</p>
+```
+
+`example.py`
+
+```python
+import pyrender
+
+compiler = pyrender.Compiler()
+template = compiler.compile('template.html')
+print(template.render({
+    'title': 'Shopping List',
+    'items': [
+        'eggs',
+        'milk',
+        'break',
+    ],
+}))
+```
+
+`stdout`
+
+```html
+<h1>Shopping List</h1>
+
+<p>Hi matt</p>
+
+<ul>
+    <li>eggs</li>
+    <li>milk</li>
+    <li>break</li>
+</ul>
+
+<p>2.7.14 (default, Mar  9 2018, 23:57:12) 
+[GCC 4.2.1 Compatible Apple LLVM 9.0.0 (clang-900.0.39.2)]</p>
+```
 
 ## Todo
 
