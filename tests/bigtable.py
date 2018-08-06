@@ -343,6 +343,7 @@ else:
 try:
     import spitfire
     import spitfire.compiler.util
+    import spitfire.compiler.options
 except ImportError:
     test_spitfire = None
 else:
@@ -357,7 +358,7 @@ else:
     </tr>
     #end for
 </table>
-"""), 'spitfire_template', spitfire.compiler.analyzer.o3_options, {
+"""), 'spitfire_template', spitfire.compiler.options.o3_options, {
         'enable_filters': True})
 
     def test_spitfire():
@@ -455,7 +456,7 @@ def run(number=100):
     import timeit
     from pstats import Stats
     names = globals().keys()
-    # names = ['test_list_extend', 'test_pyrender', 'test_wheezy_template']
+    # names = ['test_list_extend', 'test_pyrender', 'test_wheezy_template', 'test_spitfire']
     names = sorted([(name, globals()[name])
                     for name in names if name.startswith('test_')])
     print("                     msec    rps  tcalls  funcs")

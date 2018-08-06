@@ -1,0 +1,20 @@
+a
+b ' one ' two \' three \\'
+''''''''''''''''''''''''''
+four \n five \\n six \\\n
+seven
+{% x = 'one' %}
+{% 
+    for i in xrange(23)
+        __render__(str(i))
+    end
+%}
+{% for i in xrange(5) %}{{ i }}{% end %}
+asd
+end
+
+
+if __name__ == '__main__':
+    with open('example.txt', 'r') as f:
+        t = Compiler()(f.read())
+    print(t())

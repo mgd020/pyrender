@@ -1,3 +1,4 @@
+# go into spitfire directory and run `make` with the virtual enviroment activated to install
 bottle
 Chameleon
 Cheetah

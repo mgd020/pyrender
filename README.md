@@ -6,7 +6,7 @@ A Python template rendering engine.
 
 * use unicode on py2
 * extention and blocks
-* includes
+* includes + inlines
 * tests
 * add to pip
 
@@ -24,6 +24,7 @@ A Python template rendering engine.
     list_extend                 4.94 202.43   23006      7
     mako 1.0.7                 17.90  55.87   93034     35
     pyrender                    5.85 171.06   63009     10
+    spitfire 0.7.15            16.29  61.39   74014     20
     tenjin 1.1.1               11.20  89.27   73009     12
     tornado 5.1                37.35  26.77  233020     21
     web2py 2.1.1               81.06  12.34  295014     18

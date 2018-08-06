@@ -1,0 +1,3 @@
+[submodule "tests/spitfire"]
+	path = tests/spitfire
+	url = https://github.com/youtube/spitfire
