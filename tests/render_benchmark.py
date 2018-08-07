@@ -468,14 +468,16 @@ def get_pyrender_tests():
         </table>
     """
 
-    tmpl = pyrender.Compiler().compile(tmpl_src)
+    tmpl = pyrender.compile_template(tmpl_src)
     context = {'table': TABLE_DATA}
 
     def test_pyrender():
         """pyrender template"""
         tmpl.render(context)
 
-    return [test_pyrender]
+    return [
+        test_pyrender,
+    ]
 
 
 def get_tornado_tests():

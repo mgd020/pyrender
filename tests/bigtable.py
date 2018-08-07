@@ -434,8 +434,8 @@ else:
 # region: pyrender
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src')))
-from pyrender import Compiler
-pyrender_template = Compiler().compile(s("""\
+import pyrender
+pyrender_template = pyrender.compile_template(s("""\
 <table>
     {% for row in table %}
     <tr>
