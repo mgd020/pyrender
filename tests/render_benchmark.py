@@ -714,7 +714,7 @@ def run_tests(which=None, number=100, compare=False):
             'wheezy',
         ]
     else:
-        groups = ['pyrender']
+        groups = ['pyrender', 'wheezy', 'spitfire']
     # Built the full list of eligible tests.
     tests = []
     missing_engines = []

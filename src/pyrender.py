@@ -47,24 +47,36 @@ COMPOUND_STMT = re.compile(r'^(?:if|elif|else|while|for|try|except|finally|with|
 class Template(object):
     """Wrap a compiled template function and add a render() method."""
 
-    def __init__(self, code, globals_):
-        self.code = code
-        self.globals_ = globals_
-        self.rendering = 0
+    def __init__(self, func, globals_):
+        self._render = func
+        self._globals = globals_
+        self._globals_stack = []
 
     def render(self, context=None):
         lines = []
-        if not self.rendering:
-            self.globals_.clear()
-            self.globals_['__builtins__'] = __builtins__
-        if context:
-            self.globals_.update(context)
-        self.rendering += 1
+        self._push_context(context or {})
         try:
-            self.code(lines.append)
+            self._render(lines.append)
+        except:
+            raise
+        else:
+            return ''.join(lines)
         finally:
-            self.rendering -= 1
-        return ''.join(lines)
+            self._pop_context()
+
+    def _reset_context(self, context):
+        # id of globlas must not change
+        self._globals.clear()
+        self._globals['__builtins__'] = __builtins__
+        self._globals.update(context)
+
+    def _push_context(self, context):
+        # push a shallow copy of current globals onto the stack
+        self._globals_stack.append(dict(self._globals))
+        self._reset_context(context)
+
+    def _pop_context(self):
+        self._reset_context(self._globals_stack.pop())
 
 
 class SubTokens(object):

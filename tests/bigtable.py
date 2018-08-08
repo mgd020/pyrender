@@ -457,7 +457,7 @@ def run(number=100):
     import timeit
     from pstats import Stats
     names = globals().keys()
-    # names = ['test_pyrender', 'test_wheezy_template']
+    names = ['test_pyrender', 'test_wheezy_template']
     names = sorted([(name, globals()[name])
                     for name in names if name.startswith('test_')])
     print("                     msec    rps  tcalls  funcs")
@@ -467,7 +467,7 @@ def run(number=100):
             t = min(timeit.repeat(test, number=number))
             st = Stats(cProfile.Profile().runctx('test()', globals(), locals()))
             print('%-17s %7.2f %6.2f %7d %6d' % (name[5:], 1000 * t / number, number / t, st.total_calls, len(st.stats)))
-            # st.print_stats()
+            st.print_stats()
         else:
             print('%-26s not installed' % name[5:])
 
