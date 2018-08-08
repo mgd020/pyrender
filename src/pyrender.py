@@ -1,13 +1,16 @@
 import re
 
 
-# the name of the write method in the template
+# some source constants
 APPEND = '__append__'
+RENDER = 'render'
 
 # the start of the compiled render function (1 space indent, start string append)
-# globals() is updated with contents of context dict and append function so the
-# rest of the function can use symbols in context like they are locals
-SOURCE_BEGIN = "{append}('".format(append=APPEND)
+# globals() is set to the contents of globals_ dict so the rest of the function
+# can use symbols in context by name. localise append for speed.
+SOURCE_BEGIN = """\
+def {render}({append}):
+ {append}('""".format(append=APPEND, render=RENDER)
 
 # the end of the compiled render function (1 space indent, end string append)
 SOURCE_END = "')"
@@ -44,17 +47,23 @@ COMPOUND_STMT = re.compile(r'^(?:if|elif|else|while|for|try|except|finally|with|
 class Template(object):
     """Wrap a compiled template function and add a render() method."""
 
-    def __init__(self, code):
+    def __init__(self, code, globals_):
         self.code = code
+        self.globals_ = globals_
+        self.rendering = 0
 
     def render(self, context=None):
         lines = []
-        locals_ = {
-            APPEND: lines.append,
-        }
+        if not self.rendering:
+            self.globals_.clear()
+            self.globals_['__builtins__'] = __builtins__
         if context:
-            locals_.update(context)
-        exec(self.code, {}, locals_)
+            self.globals_.update(context)
+        self.rendering += 1
+        try:
+            self.code(lines.append)
+        finally:
+            self.rendering -= 1
         return ''.join(lines)
 
 
@@ -78,7 +87,7 @@ def compile_template(string):
     lines = [SOURCE_BEGIN]
 
     # current indent starts at 1 as the outer function is 0
-    indent = 0
+    indent = 1
 
     # each string token has it's own line, but code sections could have multiple so split on newline
     # will call self._repl for each token match
@@ -117,5 +126,7 @@ def compile_template(string):
     source = ''.join(lines)
 
     # compile the source, and return the template
-    code = compile(source, '<string>', 'exec')
-    return Template(code)
+    locals_ = {}  # to extract function def
+    globals_ = {}  # to put context in
+    exec(source, globals_, locals_)
+    return Template(locals_[RENDER], globals_)
