@@ -457,18 +457,16 @@ def get_pyrender_tests():
         return []
 
     tmpl_src = """
-        <table>
-            {% for row in table %}
-                <tr>
-                    {% for column in row.values() %}
-                        <td>{{ column }}</td>
-                    {% end %}
-                </tr>
-            {% end %}
+        <table>{% for row in table %}
+            <tr>{% for column in row.values() %}
+                <td>{{ column }}</td>{% end %}
+            </tr>{% end %}
         </table>
     """
 
-    tmpl = pyrender.Compiler().compile(tmpl_src)
+    from pyrender.template import Template
+
+    tmpl = Template(tmpl_src)
     context = {'table': TABLE_DATA}
 
     def test_pyrender():

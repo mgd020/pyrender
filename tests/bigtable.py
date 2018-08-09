@@ -434,18 +434,14 @@ else:
 # region: pyrender
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src')))
-from pyrender import Compiler
-pyrender_template = Compiler().compile(s("""\
-<table>
-    {% for row in table %}
-    <tr>
-        {% for key, value in row.items() %}
-        <td>{{ escape(key) }}</td><td>{{ value }}</td>
-        {% end %}
-    </tr>
-    {% end %}
+from pyrender.template import Template
+pyrender_template = Template(s("""\
+<table>{% for row in table %}
+    <tr>{% for key, value in row.items() %}
+        <td>{{ escape(key) }}</td><td>{{ value }}</td>{% end %}
+    </tr>{% end %}
 </table>
-"""))
+"""), name='bigtable')
 
 
 def test_pyrender():
