@@ -75,7 +75,7 @@ print(template.render({
 
 ## Benchmarks
 
-Run on 2017 MBP 15", sorted with `sort -n -k2`.
+Run on 2017 MBP 15".
 
 ### `bigtable`
 
