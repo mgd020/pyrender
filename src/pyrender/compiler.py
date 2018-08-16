@@ -8,18 +8,17 @@ import re
 
 
 # some source constants
-APPEND = '__append__'
 RENDER = 'render'
 
-# the start of the compiled render function (1 space indent, start string append)
+# the start of the compiled render function (1 space indent, start yield string)
 # globals() is set to the contents of globals_ dict so the rest of the function
-# can use symbols in context by name. localise append for speed.
+# can use symbols in context by name.
 SOURCE_BEGIN = """\
-def {render}({append}):
- {append}('""".format(append=APPEND, render=RENDER)
+def {render}():
+ yield '""".format(render=RENDER)
 
-# the end of the compiled render function (1 space indent, end string append)
-SOURCE_END = "')"
+# the end of the compiled render function (end string)
+SOURCE_END = "'"
 
 # tokens we replace in input string
 # * set whether we are in a string or not
@@ -30,21 +29,21 @@ REPL = {
     "'": ("'", "\\'"),
     "\\": ("\\", "\\\\"),
     # token: (replacement string, in string)
-    '{{': ("')\n{append}('%s'%(".format(append=APPEND), False),
-    '}}': ("))\n{append}('".format(append=APPEND), True),
-    '{%': ("')\n", False),
-    '%}': ("\n{append}('".format(append=APPEND), True),
+    '{{': ("'\nyield '%s'%(", False),
+    '}}': (")\nyield '", True),
+    '{%': ("'\n", False),
+    '%}': ("\nyield '", True),
 }
 
 # used instead of indentation to know when block statements have ended
 STMT_END = 'end'
 
 # useful for removing empty statements
-EMPTY_STMT = "{append}('')".format(append=APPEND)
+EMPTY_STMT = "yield ''"
 
 # efficiently replace tokens in the string
 # blackslash has to be escaped so is outside the other loop
-REGEX = re.compile(r'|'.join(re.escape(k) for k in REPL.keys()))  # \ needs escaping
+REGEX = re.compile(r'|'.join(re.escape(k) for k in REPL.keys()))
 
 # used to determine if the current line is a compound statement, to start block
 COMPOUND_STMT = re.compile(r'^(?:if|elif|else|while|for|try|except|finally|with|def|class|async)\b')
@@ -67,7 +66,9 @@ class SubTokens(object):
 
 def compile_template(string, name=None):
     """
-    Compile a string into a python function that can render to the supplied write() function, and it's globals dict.
+    Compile a string into a python function that generates strings.
+
+    Returns the function, and it's globals dict.
     """
 
     # source code line buffer
@@ -118,8 +119,11 @@ def compile_template(string, name=None):
 
     source = compile(source, name or '<string>', 'exec')
 
-    # exec the def source, and return the function
-    locals_ = {}  # to extract function def
-    globals_ = {}  # to put context in
+    locals_ = {}  # render will be defined in here
+    globals_ = {}  # will be used as render's globals dict
+
+    # exec the source to define the function
     exec(source, globals_, locals_)
+
+    # return render function and globals dict
     return locals_[RENDER], globals_

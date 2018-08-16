@@ -648,7 +648,7 @@ def get_chameleon_tests():
 
 
 def get_bottle_tests():
-    if not bottle.SimpleTemplate:
+    if not bottle or not bottle.SimpleTemplate:
         return []
 
     from bottle import SimpleTemplate
