@@ -70,11 +70,11 @@ if PY3:
         for row in table:
             e(('<tr>\n',))
             for key, value in row.items():
-                e(('<td>',
-                   escape(key),
-                   '</td><td>',
-                   str(value),
-                   '</td>\n'))
+                e(('<td>',))
+                e((escape(key),))
+                e(('</td><td>',))
+                e((str(value),))
+                e(('</td>\n',))
             e(('</tr>\n',))
         e(('</table>',))
         return ''.join(b)
@@ -87,11 +87,11 @@ else:
         for row in table:
             e((u'<tr>\n',))
             for key, value in row.items():
-                e((u'<td>',
-                   escape(key),
-                   u'</td><td>',
-                   unicode(value),
-                   u'</td>\n'))
+                e((u'<td>',))
+                e((escape(key),))
+                e((u'</td><td>',))
+                e((unicode(value),))
+                e((u'</td>\n',))
             e((u'</tr>\n',))
         e((u'</table>',))
         return ''.join(b)
